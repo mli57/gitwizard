@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mli57/gitwizard/internal/fetch"
+	"github.com/mli57/gitwizard/src/fetch"
 )
 
 func main() {

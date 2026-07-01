@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/mli57/gitwizard/src/fetch"
+	"github.com/mli57/gitwizard/src/generate"
 	"github.com/mli57/gitwizard/src/scanner"
 )
 
@@ -32,4 +33,12 @@ func main() {
 
 	fmt.Println("language: ", analysis.Language)
 	fmt.Println("run method:", analysis.RunMethod)
+
+	err = generate.Dockerfile(result.Path, analysis)
+	if err != nil {
+		fmt.Println("error:", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("dockerfile ready")
 }

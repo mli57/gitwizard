@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/mli57/gitwizard/src/fetch"
+	"github.com/mli57/gitwizard/src/scanner"
 )
 
 func main() {
@@ -22,4 +23,13 @@ func main() {
 	fmt.Println("owner:", result.Owner)
 	fmt.Println("repo: ", result.Repo)
 	fmt.Println("path: ", result.Path)
+
+	analysis, err := scanner.Scan(result.Path)
+	if err != nil {
+		fmt.Println("error:", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("language: ", analysis.Language)
+	fmt.Println("run method:", analysis.RunMethod)
 }

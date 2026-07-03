@@ -1,3 +1,6 @@
+/*
+Pulls repositories from GitHub and installs onto local machine
+*/
 package fetch
 
 import (

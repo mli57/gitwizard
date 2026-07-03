@@ -21,9 +21,35 @@ func Scan(repoPath string) (RepoAnalysis, error) {
 	lang := detectLanguage(repoPath)
 	return RepoAnalysis{
 		Language: lang,
+		Framework: detectFramework(repoPath, lang),
 		RunMethod: detectRunMethod(repoPath),
 		RuntimeVersion: detectRuntimeVersion(repoPath, lang),
 	}, nil
+}
+
+// reads requirements.txt and returns the specified framework name
+func detectFramework(repoPath, lang string) string {
+	if lang != "python" {
+		return ""
+	}
+	b, err := os.ReadFile(filepath.Join(repoPath, "requirements.txt"))
+	if err != nil {
+		return ""
+	}
+	content := strings.ToLower(string(b))
+	switch {
+	case strings.Contains(content, "flask"):
+		return "flask"
+	case strings.Contains(content, "fastapi"):
+		return "fastapi"
+	case strings.Contains(content, "django"):
+		return "django"
+	case strings.Contains(content, "streamlit"):
+		return "streamlit"
+	case strings.Contains(content, "gradio"):
+		return "gradio"
+	}
+	return ""
 }
 
 func detectRuntimeVersion(repoPath, lang string) string {

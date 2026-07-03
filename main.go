@@ -63,4 +63,11 @@ func main() {
 		os.Exit(1)
 	}
 	fmt.Println("Host port: ", hostPort)
+
+	// READY: polling app until it responds
+	err = docker.WaitForApp(hostPort)
+	if err != nil {
+		fmt.Println("error:", err)
+		os.Exit(1)
+	}
 }

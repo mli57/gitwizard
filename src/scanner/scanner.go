@@ -15,15 +15,18 @@ type RepoAnalysis struct {
 	RunMethod string
 	Port int
 	RuntimeVersion string
+	EntryPoint string
 }
 
 func Scan(repoPath string) (RepoAnalysis, error) {
 	lang := detectLanguage(repoPath)
+	framework := detectFramework(repoPath, lang)
 	return RepoAnalysis{
 		Language: lang,
-		Framework: detectFramework(repoPath, lang),
+		Framework: framework,
 		RunMethod: detectRunMethod(repoPath),
 		RuntimeVersion: detectRuntimeVersion(repoPath, lang),
+		EntryPoint: detectEntryPoint(repoPath, framework),
 	}, nil
 }
 
@@ -104,4 +107,29 @@ func detectLanguage(repoPath string) string {
 		return "node"
 	}
 	return "unknown"
+}
+
+func detectEntryPoint(repoPath string, framework string) string {
+	if framework != "flask" && framework != "fastapi" {
+		return ""
+	}
+	pattern := "Flask("
+	if framework == "fastapi" {
+		pattern = "FastAPI("
+	}
+	found := ""
+	filepath.Walk(repoPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() || !strings.HasSuffix(path, ".py") {
+			return nil
+		}
+		b, err := os.ReadFile(path)
+		if err != nil {
+			return nil
+		}
+		if strings.Contains(string(b), pattern) {
+			found = filepath.Base(path)
+		}
+		return nil
+	})
+	return found
 }

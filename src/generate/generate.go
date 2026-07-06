@@ -62,7 +62,7 @@ func Dockerfile(repoPath string, analysis scanner.RepoAnalysis) error {
 		}
 		// always runs for python, swaps the default CMD with the right start command for the detected framework
 		if analysis.Language == "python" {
-			template = strings.Replace(template, `CMD ["python", "main.py"]`, pythonStartCmd(analysis.Framework), 1)
+			template = strings.Replace(template, `CMD ["python", "main.py"]`, pythonStartCmd(analysis.Framework, analysis.EntryPoint), 1)
 		}
 		dest := filepath.Join(repoPath, "Dockerfile")
 		return os.WriteFile(dest, []byte(template), 0644)
@@ -71,16 +71,20 @@ func Dockerfile(repoPath string, analysis scanner.RepoAnalysis) error {
 	}
 }
 
-// takes the detected framework and returns the docker cmd line associated with it
-func pythonStartCmd(framework string) string {
+// takes the detected framework and entry point filename and returns the docker cmd line associated with it
+func pythonStartCmd(framework, entryPoint string) string {
+	if entryPoint == "" {
+		entryPoint = "main.py"
+	}
+	module := strings.TrimSuffix(entryPoint, ".py")
 	switch framework {
 	case "flask":
-		return "ENV FLASK_APP=main.py\nCMD [\"flask\", \"run\", \"--host=0.0.0.0\", \"--port=5000\"]"
+		return "ENV FLASK_APP=" + entryPoint + "\nCMD [\"flask\", \"run\", \"--host=0.0.0.0\", \"--port=5000\"]"
 	case "fastapi":
-		return "CMD [\"uvicorn\", \"main:app\", \"--host=0.0.0.0\", \"--port=5000\"]"
+		return "CMD [\"uvicorn\", \"" + module + ":app\", \"--host=0.0.0.0\", \"--port=5000\"]"
 	case "django":
 		return "CMD [\"python\", \"manage.py\", \"runserver\", \"0.0.0.0:8000\"]"
 	default:
-		return "CMD [\"python\", \"main.py\"]"
+		return "CMD [\"python\", \"" + entryPoint + "\"]"
 	}
 }

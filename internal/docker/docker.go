@@ -120,11 +120,12 @@ func findFreePort() (int, error) {
 	return listener.Addr().(*net.TCPAddr).Port, nil
 }
 
-// 
-func Run(imageName string, port int) (int, error) {
+// Starts a container from imageName, mapping its internal port to a free host port.
+// Returns the host port, the container ID (for the state store), and any error.
+func Run(imageName string, port int) (int, string, error) {
 	foundPort, err := findFreePort()
 	if err != nil {
-		return 0, err
+		return 0, "", err
 	}
 
 	hostPort := fmt.Sprintf("%d", foundPort)
@@ -140,7 +141,7 @@ func Run(imageName string, port int) (int, error) {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		return 0, fmt.Errorf("could not connect to Docker: %w", err)
+		return 0, "", fmt.Errorf("could not connect to Docker: %w", err)
 	}
 	defer cli.Close()
 
@@ -159,13 +160,13 @@ func Run(imageName string, port int) (int, error) {
 	)
 
 	if err != nil {
-		return 0, fmt.Errorf("could not create container: %w", err)
+		return 0, "", fmt.Errorf("could not create container: %w", err)
 	}
 
 	// start the container
 	if err := cli.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
-		return 0, fmt.Errorf("could not start container: %w", err)
+		return 0, "", fmt.Errorf("could not start container: %w", err)
 	}
 
-	return foundPort, nil
+	return foundPort, resp.ID, nil
 }

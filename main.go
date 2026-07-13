@@ -9,6 +9,7 @@ import (
 	"github.com/mli57/gitwizard/internal/scanner"
 	"github.com/mli57/gitwizard/internal/generate"
 	"github.com/mli57/gitwizard/internal/docker"
+	"github.com/mli57/gitwizard/internal/state"
 )
 
 func main() {
@@ -57,7 +58,7 @@ func main() {
 
 	// RUN: takes the docker image and runs it on a port
 	fmt.Println("image built:", imageName)
-	hostPort, err := docker.Run(imageName, 5000)
+	hostPort, containerID, err := docker.Run(imageName, 5000)
 	if err != nil {
 		fmt.Println("error:", err)
 		os.Exit(1)
@@ -70,4 +71,24 @@ func main() {
 		fmt.Println("error:", err)
 		os.Exit(1)
 	}
+
+	// STATE: record the installed app so it can be re-opened or uninstalled later
+	appState, err := state.Load()
+	if err != nil {
+		fmt.Println("error:", err)
+		os.Exit(1)
+	}
+	key := strings.ToLower(result.Owner + "-" + result.Repo)
+	appState.Apps[key] = state.AppEntry{
+		ImageName:   imageName,
+		ContainerID: containerID,
+		Port:        hostPort,
+		Path:        result.Path,
+	}
+	if err := state.Save(appState); err != nil {
+		fmt.Println("error:", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("app is running: http://localhost:" + fmt.Sprint(hostPort))
 }

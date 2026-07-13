@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/mli57/gitwizard/src/scanner"
+	"github.com/mli57/gitwizard/internal/scanner"
 )
 
 var dockerfileTemplates = map[string]string{

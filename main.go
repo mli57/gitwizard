@@ -5,10 +5,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mli57/gitwizard/src/fetch"
-	"github.com/mli57/gitwizard/src/scanner"
-	"github.com/mli57/gitwizard/src/generate"
-	"github.com/mli57/gitwizard/src/docker"
+	"github.com/mli57/gitwizard/internal/fetch"
+	"github.com/mli57/gitwizard/internal/scanner"
+	"github.com/mli57/gitwizard/internal/generate"
+	"github.com/mli57/gitwizard/internal/docker"
 )
 
 func main() {

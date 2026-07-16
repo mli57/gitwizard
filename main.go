@@ -39,31 +39,41 @@ func main() {
 	fmt.Println("language: ", analysis.Language)
 	fmt.Println("run method:", analysis.RunMethod)
 
-	// GENERATE: write a Dockerfile if the repo doesn't already have one
-	err = generate.Dockerfile(result.Path, analysis)
-	if err != nil {
-		fmt.Println("error:", err)
-		os.Exit(1)
-	}
+	var hostPort int
+	var containerID string
+	var imageName string
 
-	fmt.Println("dockerfile ready")
+	if analysis.RunMethod == "compose" {
+		hostPort, containerID, err = docker.RunCompose(result.Path)
+	} else if analysis.RunMethod == "generate" || analysis.RunMethod == "dockerfile" {
+		if analysis.RunMethod == "generate" {
+			// GENERATE: write a Dockerfile if the repo doesn't already have one
+			err = generate.Dockerfile(result.Path, analysis)
+			if err != nil {
+				fmt.Println("error:", err)
+				os.Exit(1)
+			}
 
-	// BUILD: build a Docker image from the Dockerfile
-	imageName := strings.ToLower(result.Owner + "-" + result.Repo)
-	err = docker.Build(result.Path, imageName)
-	if err != nil {
-		fmt.Println("error:", err)
-		os.Exit(1)
-	}
+			fmt.Println("dockerfile ready")
+		}
 
-	// RUN: takes the docker image and runs it on a port
-	fmt.Println("image built:", imageName)
-	hostPort, containerID, err := docker.Run(imageName, 5000)
-	if err != nil {
-		fmt.Println("error:", err)
-		os.Exit(1)
+		// BUILD: build a Docker image from the Dockerfile
+		imageName = strings.ToLower(result.Owner + "-" + result.Repo)
+		err = docker.Build(result.Path, imageName)
+		if err != nil {
+			fmt.Println("error:", err)
+			os.Exit(1)
+		}
+
+		// RUN: takes the docker image and runs it on a port
+		fmt.Println("image built:", imageName)
+		hostPort, containerID, err = docker.Run(imageName, 5000)
+		if err != nil {
+			fmt.Println("error:", err)
+			os.Exit(1)
+		}
+		fmt.Println("Host port: ", hostPort)
 	}
-	fmt.Println("Host port: ", hostPort)
 
 	// READY: polling app until it responds
 	err = docker.WaitForApp(hostPort)

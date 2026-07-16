@@ -76,15 +76,25 @@ func detectRuntimeVersion(repoPath, lang string) string {
 	return ""
 }
 
+// only the bare compose filenames are recognized (also docker-compose.override.yml,which is auto-merged). 
+// Named variants of these files are deliberately left out.
+var composeFilenames = []string{
+	"docker-compose.yml",
+	"docker-compose.yaml",
+	"compose.yml",
+	"compose.yaml",
+}
+
 func detectRunMethod(repoPath string) string {
-	// return 'compose' if we find the .yml
-	_, err := os.Stat(filepath.Join(repoPath, "docker-compose.yml"))
-	if err == nil {
-		return "compose"
+	// return 'compose' if we find any recognized compose filename
+	for _, name := range composeFilenames {
+		if _, err := os.Stat(filepath.Join(repoPath, name)); err == nil {
+			return "compose"
+		}
 	}
 
 	// same for dockerfile
-	_, err = os.Stat(filepath.Join(repoPath, "Dockerfile"))
+	_, err := os.Stat(filepath.Join(repoPath, "Dockerfile"))
 	if err == nil {
 		return "dockerfile"
 	}

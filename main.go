@@ -39,12 +39,32 @@ func main() {
 	fmt.Println("language: ", analysis.Language)
 	fmt.Println("run method:", analysis.RunMethod)
 
-	var hostPort int
+	// each way of running a repo ends up with a set of host ports the app might be on 
+	// which one it's actually on isn't known until we check them
+	var hostPorts []int
 	var containerID string
 	var imageName string
 
+	// 3 possibilities: compose.yml(auto build & run), standalone dockerfile, nothing related to docker
 	if analysis.RunMethod == "compose" {
-		hostPort, containerID, err = docker.RunCompose(result.Path)
+		// compose files leave blanks the repo expects you to fill in by hand
+		notes, err := docker.PrepareEnv(result.Path)
+		if err != nil {
+			fmt.Println("error:", err)
+			os.Exit(1)
+		}
+		if len(notes) > 0 {
+			fmt.Println("filled in .env for you:")
+			for _, note := range notes {
+				fmt.Println(note)
+			}
+		}
+
+		hostPorts, containerID, err = docker.RunCompose(result.Path)
+		if err != nil {
+			fmt.Println("error:", err)
+			os.Exit(1)
+		}
 	} else if analysis.RunMethod == "generate" || analysis.RunMethod == "dockerfile" {
 		if analysis.RunMethod == "generate" {
 			// GENERATE: write a Dockerfile if the repo doesn't already have one
@@ -67,16 +87,16 @@ func main() {
 
 		// RUN: takes the docker image and runs it on a port
 		fmt.Println("image built:", imageName)
-		hostPort, containerID, err = docker.Run(imageName, 5000)
+		hostPorts, containerID, err = docker.Run(imageName)
 		if err != nil {
 			fmt.Println("error:", err)
 			os.Exit(1)
 		}
-		fmt.Println("Host port: ", hostPort)
 	}
 
-	// READY: polling app until it responds
-	err = docker.WaitForApp(hostPort)
+	// READY: check the candidate ports until the app answers on one of them
+	fmt.Println("checking ports:", hostPorts)
+	hostPort, err := docker.WaitForApp(hostPorts)
 	if err != nil {
 		fmt.Println("error:", err)
 		os.Exit(1)
